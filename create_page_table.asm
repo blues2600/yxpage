@@ -3,36 +3,36 @@ include		header.inc
 
 
 .data
-file_handle				dword		0								;ÎÄ¼ş¾ä±ú
-file_size				dword		0								;ÎÄ¼şµÄÊµ¼Ê´óĞ¡£¬×Ö½Ú
-table_max_size			dword		1048574							;Ò³±íÏî×î´óÊıÁ¿
-err_msg_pointer			dword		0								;´íÎóÏûÏ¢Ö¸Õë
+file_handle				dword		0								;æ–‡ä»¶å¥æŸ„
+file_size				dword		0								;æ–‡ä»¶çš„å®é™…å¤§å°ï¼Œå­—èŠ‚
+table_max_size			dword		1048575							;é¡µè¡¨é¡¹æœ€å¤§æ•°é‡
+err_msg_pointer			dword		0								;é”™è¯¯æ¶ˆæ¯æŒ‡é’ˆ
 err_msg_failed			byte		"failed.",0
 err_msg_pro_too_big		byte		"the program too big.",0
 
 .code
 
-;					** Ò³±íËµÃ÷ **
+;					** é¡µè¡¨è¯´æ˜ **
 ;	
-;		Ò³±íÖĞÃ¿Ò»ÏîµÄ½á¹¹Îª [page number] [page address]£¬ÆäÖĞpage number ºÍ page address¶¼Îªdword
-;		Ò²¾ÍÊÇËµ£¬ÔÚÒ³±íÖĞÒ»¶Ôpage number ºÍ page addressÎªÊı×éµÄÒ»¸öÔªËØ£¨Ò»¸öÒ³±íÏî£©
-;		Ò³ºÅÔÚÒ³±íÖĞ°´ÉıĞòÅÅÁĞ£¬ÀıÈçpage[0] = pagetable[0] , page[1] = pagetable[1]
+;		é¡µè¡¨ä¸­æ¯ä¸€é¡¹çš„ç»“æ„ä¸º [page number] [page address]ï¼Œå…¶ä¸­page number å’Œ page addresséƒ½ä¸ºdword
+;		ä¹Ÿå°±æ˜¯è¯´ï¼Œåœ¨é¡µè¡¨ä¸­ä¸€å¯¹page number å’Œ page addressä¸ºæ•°ç»„çš„ä¸€ä¸ªå…ƒç´ ï¼ˆä¸€ä¸ªé¡µè¡¨é¡¹ï¼‰
+;		é¡µå·åœ¨é¡µè¡¨ä¸­æŒ‰å‡åºæ’åˆ—ï¼Œä¾‹å¦‚page[0] = pagetable[0] , page[1] = pagetable[1]
 ;
-;		page address½á¹¹:	Î»31		Ò³ÊÇ·ñÔÚÄÚ´æ£¬1Îªture£¬0Îªfalse
-;							Î»30		Ò³µÄÄÚÈİÊÇ·ñÒÑ¾­±»ĞŞ¸Ä£¬1Îªture£¬0Îªfalse
-;							Î»29~28  Ò³µÄÈ¨ÏŞ£¬·Ö±ğÎª10¿É¶Á¡¢01¿ÉĞ´¡¢11¿É¶ÁÇÒ¿ÉĞ´¡¢00²»¿É¶Á²»¿ÉĞ´
-;							Î»27~20  ±¸ÓÃ£¬ÖÃ0
-;							Î»19~0	 Ò³¿ò(page frame)µÄÎïÀíµØÖ·
+;		page addressç»“æ„:	ä½31		é¡µæ˜¯å¦åœ¨å†…å­˜ï¼Œ1ä¸ºtureï¼Œ0ä¸ºfalse
+;							ä½30		é¡µçš„å†…å®¹æ˜¯å¦å·²ç»è¢«ä¿®æ”¹ï¼Œ1ä¸ºtureï¼Œ0ä¸ºfalse
+;							ä½29~28  é¡µçš„æƒé™ï¼Œåˆ†åˆ«ä¸º10å¯è¯»ã€01å¯å†™ã€11å¯è¯»ä¸”å¯å†™ã€00ä¸å¯è¯»ä¸å¯å†™
+;							ä½27~20  å¤‡ç”¨ï¼Œç½®0
+;							ä½19~0	 é¡µæ¡†(page frame)çš„ç‰©ç†åœ°å€
 
 
-; Ãû³Æ£º	create_page_table 
-; ¹¦ÄÜ£º	ÎªÒ»¸öexe½ø³Ì´´½¨Ò³±í£¬ÒÔÖ§³Ö²Ù×÷ÏµÍ³µÄ·ÖÒ³»úÖÆ
-; ËµÃ÷£º	ĞéÄâµØÖ·¿Õ¼ä´Ó0~0xFFFFFFFF
-;		ÎïÀíµØÖ·µÄÒ³¿ò²¿·Ö»¹Ã»ÓĞÊµÏÖ£¡£¡
-; ÒªÇó£º	±ØĞëÊÇx86 32bit PE32³ÌĞò
-; ²ÎÊı£º file_name:ptr byte			;ÎÄ¼şÃû
-;		page_table:ptr dword		;Ò³±íÖ¸Õë
-; ·µ»Ø£º	Èç¹û³É¹¦eax·µ»Ø1£¬·ñÔò·µ»Ø0
+; åç§°ï¼š	create_page_table 
+; åŠŸèƒ½ï¼š	ä¸ºä¸€ä¸ªexeè¿›ç¨‹åˆ›å»ºé¡µè¡¨ï¼Œä»¥æ”¯æŒæ“ä½œç³»ç»Ÿçš„åˆ†é¡µæœºåˆ¶
+; è¯´æ˜ï¼š	è™šæ‹Ÿåœ°å€ç©ºé—´ä»0~0xFFFFFFFF
+;		ç‰©ç†åœ°å€çš„é¡µæ¡†éƒ¨åˆ†è¿˜æ²¡æœ‰å®ç°ï¼ï¼
+; è¦æ±‚ï¼š	å¿…é¡»æ˜¯x86 32bit PE32ç¨‹åº
+; å‚æ•°ï¼š file_name:ptr byte			;æ–‡ä»¶å
+;		page_table:ptr dword		;é¡µè¡¨æŒ‡é’ˆ
+; è¿”å›ï¼š	å¦‚æœæˆåŠŸeaxè¿”å›1ï¼Œå¦åˆ™è¿”å›0
 
 create_page_table	proc
 					file_name		equ		[ebp+8]			
@@ -44,63 +44,63 @@ create_page_table	proc
 					push		ecx
 					push		esi
 
-					;´ò¿ªÎÄ¼ş
+					;æ‰“å¼€æ–‡ä»¶
 					invoke		CreateFileA, file_name, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
 					cmp			eax,INVALID_HANDLE_VALUE		
-					jne			open_ok										;ÎÄ¼ş´ò¿ª³É¹¦
-					call		GetLastError								;´ò¿ªÊ§°Ü£¬»ñÈ¡´íÎó±àºÅ
+					jne			open_ok										;æ–‡ä»¶æ‰“å¼€æˆåŠŸ
+					call		GetLastError								;æ‰“å¼€å¤±è´¥ï¼Œè·å–é”™è¯¯ç¼–å·
 					invoke		FormatMessageA,FORMAT_MESSAGE_ALLOCATE_BUFFER+FORMAT_MESSAGE_FROM_SYSTEM, NULL, eax ,NULL, ADDR err_msg_pointer, NULL, NULL
-					mov			edx,err_msg_pointer							;Êä³ö´íÎóĞÅÏ¢
+					mov			edx,err_msg_pointer							;è¾“å‡ºé”™è¯¯ä¿¡æ¯
 					call		WriteString
 					mov			eax,0
 					jmp			failed
 open_ok:		
 					mov			file_handle,eax
 
-					;»ñÈ¡ÎÄ¼ş´óĞ¡
+					;è·å–æ–‡ä»¶å¤§å°
 					invoke		GetFileSize, file_handle,addr file_size
 					cmp			eax,0
-					jnz			getFileSizeok								;³É¹¦»ñµÃÎÄ¼ş´óĞ¡
-					call		Crlf										;»»ĞĞ
-					mov			edx,offset err_msg_failed					;»ñÈ¡ÎÄ¼ş´óĞ¡Ê§°Ü
+					jnz			getFileSizeok								;æˆåŠŸè·å¾—æ–‡ä»¶å¤§å°
+					call		Crlf										;æ¢è¡Œ
+					mov			edx,offset err_msg_failed					;è·å–æ–‡ä»¶å¤§å°å¤±è´¥
 					call		WriteString
 					mov			eax,0
 					jmp			failed
 getFileSizeok:
 
-					;ÆÀ¹ÀÎÄ¼ş´óĞ¡
+					;è¯„ä¼°æ–‡ä»¶å¤§å°
 					mov			eax,file_size								
-					cmp			eax,0FFFFFFFEh								;¼ì²é³ÌĞòÊÇ·ñ³¬¹ı4GB
+					cmp			eax,0FFFFFFFEh								;æ£€æŸ¥ç¨‹åºæ˜¯å¦è¶…è¿‡4GB
 					jbe			file_size_ok
-					call		Crlf										;»»ĞĞ
-					mov			edx,offset err_msg_pro_too_big				;³ÌĞò´óĞ¡³¬³ö4GB
+					call		Crlf										;æ¢è¡Œ
+					mov			edx,offset err_msg_pro_too_big				;ç¨‹åºå¤§å°è¶…å‡º4GB
 					call		WriteString
 					mov			eax,0
 					jmp			failed
 file_size_ok:
 
-					;³õÊ¼»¯Ò³±íµÄÒ³ºÅ£¬¼´Ò³±íÏîÖĞµÄpage number²¿·Ö£¬´ÓµÚ0Ò³~2µÄ20´Î·½-1Ò³£¨¼´µÚ1048575Ò³£©
-					mov			esi,page_table								;¼ÓÔØÒ³±íÖ¸Õë
-					add			esi,8										;µÚ0Ò³µÄÒ³ºÅ²»ĞèÒª³õÊ¼»¯
-					mov			eax,1										;Ò³ºÅ
-					mov			ecx,table_max_size							;Ñ­»·¼ÆÊıÆ÷
+					;åˆå§‹åŒ–é¡µè¡¨çš„é¡µå·ï¼Œå³é¡µè¡¨é¡¹ä¸­çš„page numberéƒ¨åˆ†ï¼Œä»ç¬¬0é¡µ~2çš„20æ¬¡æ–¹-1é¡µï¼ˆå³ç¬¬1048575é¡µï¼‰
+					mov			esi,page_table								;åŠ è½½é¡µè¡¨æŒ‡é’ˆ
+					add			esi,8										;ç¬¬0é¡µçš„é¡µå·ä¸éœ€è¦åˆå§‹åŒ–
+					mov			eax,1										;é¡µå·
+					mov			ecx,table_max_size							;å¾ªç¯è®¡æ•°å™¨
 initialize_page_number:				
-					mov			[esi],eax									;³õÊ¼»¯Ò³ºÅ
-					inc			eax											;Ò³ºÅ×ÔÔö
-					add			esi,8										;Ö¸ÏòÏÂÒ»¸öÒ³±íÏî
+					mov			[esi],eax									;åˆå§‹åŒ–é¡µå·
+					inc			eax											;é¡µå·è‡ªå¢
+					add			esi,8										;æŒ‡å‘ä¸‹ä¸€ä¸ªé¡µè¡¨é¡¹
 					loop		initialize_page_number
 
-					;³õÊ¼»¯Ò³±íµÄÒ³¿òµØÖ·ºÍÊı¾İÊôĞÔ£¬¼´Ò³±íÏîÖĞµÄpage address²¿·Ö£¬´ÓµÚ0Ò³~2µÄ20´Î·½-1Ò³£¨¼´µÚ1048575Ò³£©
-					mov			esi,page_table								;¼ÓÔØÒ³±íÖ¸Õë
-					add			esi,4										;Ö¸ÏòµÚ0Ò³µÄpage address
-					mov			ecx,table_max_size							;Ñ­»·¼ÆÊıÆ÷
+					;åˆå§‹åŒ–é¡µè¡¨çš„é¡µæ¡†åœ°å€å’Œæ•°æ®å±æ€§ï¼Œå³é¡µè¡¨é¡¹ä¸­çš„page addresséƒ¨åˆ†ï¼Œä»ç¬¬0é¡µ~2çš„20æ¬¡æ–¹-1é¡µï¼ˆå³ç¬¬1048575é¡µï¼‰
+					mov			esi,page_table								;åŠ è½½é¡µè¡¨æŒ‡é’ˆ
+					add			esi,4										;æŒ‡å‘ç¬¬0é¡µçš„page address
+					mov			ecx,table_max_size							;å¾ªç¯è®¡æ•°å™¨
 					mov			eax,0										
 initialize_address_number:	
-					mov			[esi],eax									;³õÊ¼»¯page address
-					add			esi,8										;Ö¸ÏòÏÂÒ»¸öpage address
+					mov			[esi],eax									;åˆå§‹åŒ–page address
+					add			esi,8										;æŒ‡å‘ä¸‹ä¸€ä¸ªpage address
 					loop		initialize_address_number
 
-					mov			eax,1										;Õı³£·µ»Ø
+					mov			eax,1										;æ­£å¸¸è¿”å›
 failed:				
 
 					pop			esi
