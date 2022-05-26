@@ -1,0 +1,2 @@
+D:\二进制\代码\VAtoPA\Debug\Project.exe
+D:\二进制\代码\VAtoPA\Debug\Project.pdb
