@@ -25,7 +25,7 @@ physic_address				dword	0								;物理地址
 file_name					byte	"c:\\od.exe",0
 size_of_mumber	= 8													;页表项大小
 .data?
-page_table					qword	1048574		dup(?)				;页表
+page_table					qword	PAGE_NUMBER_MAX		dup(?)		;页表
 
 
 
