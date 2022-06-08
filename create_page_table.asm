@@ -5,7 +5,7 @@ include		header.inc
 .data
 file_handle				dword		0								;文件句柄
 file_size				dword		0								;文件的实际大小，字节
-table_max_size			dword		1048575							;页表项最大数量
+table_max_size			dword		PAGE_NUMBER_MAX					;页表项最大数量
 err_msg_pointer			dword		0								;错误消息指针
 err_msg_failed			byte		"failed.",0
 err_msg_pro_too_big		byte		"the program too big.",0
