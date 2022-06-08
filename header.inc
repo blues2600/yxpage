@@ -25,6 +25,8 @@ CloseHandle PROTO ,hObject:dword
 ;************ process_table 
 ;************ sometimes called PCB(process contrl block)
 
+PAGE_NUMBER_MAX = 1048574               ;一个进程可以拥有的最大页数量
+
 ;process_table	struct
 
 		;process registers
